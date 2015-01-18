@@ -132,6 +132,9 @@ class ReportAdmin(object):
     list_filter_queryset = {}
     """ForeignKey custom queryset"""
 
+    extra_filters = {}
+    """Dictionary with aditional form fields to add to FormFilters."""
+
     list_order_by = ()
     """List of fields or lookup fields to order data."""
 
@@ -348,7 +351,7 @@ class ReportAdmin(object):
         return values
 
     # @cache_return
-    def get_query_set(self, filter_kwargs):
+    def get_query_set(self, filter_kwargs, extra_filter_kwargs=None):
         """
         Return the the queryset
         """
@@ -410,6 +413,7 @@ class ReportAdmin(object):
             if context_request.GET:
                 groupby_data = form_groupby.get_cleaned_data() if form_groupby else None
                 filter_kwargs = filter_related_fields or form_filter.get_filter_kwargs()
+                extra_filter_kwargs = form_filter.get_extra_filter_kwargs()
                 if groupby_data:
                     self.__dict__.update(groupby_data)
                 else:
@@ -525,6 +529,10 @@ class ReportAdmin(object):
 
     def get_form_filter(self, request):
         form_fields = fields_for_model(self.model, [f for f in self.get_query_field_names() if f in self.list_filter])
+        if self.extra_filters:
+            # update form_fields with extra_filters if they were defined
+            form_fields.update(self.extra_filters)
+
         if not form_fields:
             form_fields = {
                 '__all__': forms.BooleanField(label='', widget=forms.HiddenInput, initial='1')
@@ -614,7 +622,7 @@ class ReportAdmin(object):
                 form_fields[k] = field
 
         FilterFormClass = type('FilterFormBase', (FilterForm,), {'base_fields': form_fields})
-        form = FilterFormClass(data=request.GET or None)
+        form = FilterFormClass(data=request.GET or None, extra_filters=self.extra_filters.keys())
         form.is_valid()
         return form
 
@@ -736,14 +744,14 @@ class ReportAdmin(object):
             attr = attr()
         return attr
 
-    def get_rows(self, groupby_data=None, filter_kwargs={}, filter_related_fields={}):
+    def get_rows(self, groupby_data=None, filter_kwargs={}, filter_related_fields={}, extra_filter_kwargs=None):
         report_rows = []
 
         for selected_field, field_value in filter_kwargs.items():
             if selected_field in self.override_field_filter_values:
                 filter_kwargs[selected_field] = self.override_field_filter_values.get(selected_field)(self, field_value)
 
-        qs = self.get_query_set(filter_kwargs)
+        qs = self.get_query_set(filter_kwargs, extra_filter_kwargs)
         ffields = [f if 'self.' not in f else 'pk' for f in self.get_query_field_names() if f not in filter_related_fields]
         ffields_include_self = [f for f in self.get_query_field_names() if f not in filter_related_fields]
         extra_ffield = []

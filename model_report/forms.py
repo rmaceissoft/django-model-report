@@ -85,30 +85,40 @@ class FilterForm(forms.BaseForm):
             return {}
         filter_kwargs = dict(self.cleaned_data)
         for k, v in dict(filter_kwargs).items():
-            if not v:
-                filter_kwargs.pop(k)
-                continue
-            if k == '__all__':
-                filter_kwargs.pop(k)
-                continue
-            if isinstance(v, (list, tuple)):
-                if isinstance(self.fields[k], (RangeField)):
+            if k not in self.extra_filters:
+                if not v:
                     filter_kwargs.pop(k)
-                    start_range, end_range = v
-                    if start_range:
-                        filter_kwargs['%s__gte' % k] = start_range
-                    if end_range:
-                        filter_kwargs['%s__lte' % k] = end_range
-            elif hasattr(self.fields[k], 'as_boolean'):
-                if v:
+                    continue
+                if k == '__all__':
                     filter_kwargs.pop(k)
-                    filter_kwargs[k] = (unicode(v) == u'True')
+                    continue
+                if isinstance(v, (list, tuple)):
+                    if isinstance(self.fields[k], (RangeField)):
+                        filter_kwargs.pop(k)
+                        start_range, end_range = v
+                        if start_range:
+                            filter_kwargs['%s__gte' % k] = start_range
+                        if end_range:
+                            filter_kwargs['%s__lte' % k] = end_range
+                elif hasattr(self.fields[k], 'as_boolean'):
+                    if v:
+                        filter_kwargs.pop(k)
+                        filter_kwargs[k] = (unicode(v) == u'True')
         return filter_kwargs
+
+    def get_extra_filter_kwargs(self):
+        if not self.is_valid():
+            return {}
+        extra_filter_kwargs = {}
+        for k, v in self.cleaned_data.items():
+            extra_filter_kwargs[k] = v
+        return extra_filter_kwargs
 
     def get_cleaned_data(self):
         return getattr(self, 'cleaned_data', {})
 
     def __init__(self, *args, **kwargs):
+        self.extra_filters = kwargs.pop('extra_filters', {})
         super(FilterForm, self).__init__(*args, **kwargs)
         self.filter_report_is_all = '__all__' in self.fields and len(self.fields) == 1
         try:
