@@ -418,7 +418,8 @@ class ReportAdmin(object):
                     self.__dict__.update(groupby_data)
                 else:
                     self.__dict__['onlytotals'] = False
-                report_rows = self.get_rows(groupby_data, filter_kwargs, filter_related_fields)
+                report_rows = self.get_rows(groupby_data, filter_kwargs, filter_related_fields,
+                                            extra_filter_kwargs=extra_filter_kwargs)
 
                 for g, r in report_rows:
                     report_anchors.append(g)

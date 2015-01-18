@@ -81,20 +81,18 @@ class FilterForm(forms.BaseForm):
         pass
 
     def get_filter_kwargs(self):
+        filter_kwargs = {}
         if not self.is_valid():
-            return {}
-        filter_kwargs = dict(self.cleaned_data)
-        for k, v in dict(filter_kwargs).items():
+            return filter_kwargs
+
+        for k, v in self.cleaned_data.items():
             if k not in self.extra_filters:
                 if not v:
-                    filter_kwargs.pop(k)
                     continue
-                if k == '__all__':
-                    filter_kwargs.pop(k)
+                elif k == '__all__':
                     continue
-                if isinstance(v, (list, tuple)):
-                    if isinstance(self.fields[k], (RangeField)):
-                        filter_kwargs.pop(k)
+                elif isinstance(v, (list, tuple)):
+                    if isinstance(self.fields[k], RangeField):
                         start_range, end_range = v
                         if start_range:
                             filter_kwargs['%s__gte' % k] = start_range
@@ -102,16 +100,16 @@ class FilterForm(forms.BaseForm):
                             filter_kwargs['%s__lte' % k] = end_range
                 elif hasattr(self.fields[k], 'as_boolean'):
                     if v:
-                        filter_kwargs.pop(k)
                         filter_kwargs[k] = (unicode(v) == u'True')
         return filter_kwargs
 
     def get_extra_filter_kwargs(self):
-        if not self.is_valid():
-            return {}
         extra_filter_kwargs = {}
+        if not self.is_valid():
+            return extra_filter_kwargs
         for k, v in self.cleaned_data.items():
-            extra_filter_kwargs[k] = v
+            if k in self.extra_filters:
+                extra_filter_kwargs[k] = v
         return extra_filter_kwargs
 
     def get_cleaned_data(self):
