@@ -138,4 +138,5 @@ class FilterForm(forms.BaseForm):
             pass
 
         for field in self.fields:
-            self.fields[field].required = False
+            if field not in self.extra_filters:
+                self.fields[field].required = False
