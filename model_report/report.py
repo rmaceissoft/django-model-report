@@ -381,7 +381,7 @@ class ReportAdmin(object):
         self.query_set = qs.distinct()
         return self.query_set
 
-    def get_title(self):
+    def get_title(self, filter_kwargs=None, extra_filter_kwargs=None):
         """
         Return the report title
         """
@@ -430,7 +430,7 @@ class ReportAdmin(object):
                 if self.type == 'chart' and groupby_data and groupby_data['groupby']:
                     config = form_config.get_config_data()
                     if config:
-                        chart = self.get_chart(config, report_rows)
+                        chart = self.get_chart(config, report_rows, filter_kwargs, extra_filter_kwargs)
 
                 if self.onlytotals:
                     for g, rows in report_rows:
@@ -441,8 +441,9 @@ class ReportAdmin(object):
                 if not context_request.GET.get('export', None) is None and not self.parent_report:
                     exporter_class = self.exporters.get(context_request.GET.get('export'), None)
                     if exporter_class:
+                        report_title = self.get_title(filter_kwargs, extra_filter_kwargs)
                         report_inlines = [ir(self, context_request) for ir in self.inlines]
-                        return exporter_class.render(self, column_labels, report_rows, report_inlines)
+                        return exporter_class.render(self, report_title, column_labels, report_rows, report_inlines)
 
             inlines = [ir(self, context_request) for ir in self.inlines]
 
@@ -485,8 +486,8 @@ class ReportAdmin(object):
     def has_group_totals(self):
         return not (not self.group_totals)
 
-    def get_chart(self, config, report_rows):
-        config['title'] = self.get_title()
+    def get_chart(self, config, report_rows, filter_kwargs=None, extra_filter_kwargs=None):
+        config['title'] = self.get_title(filter_kwargs, extra_filter_kwargs)
         config['has_report_totals'] = self.has_report_totals()
         config['has_group_totals'] = self.has_group_totals()
         return HighchartRender(config).get_chart(report_rows)

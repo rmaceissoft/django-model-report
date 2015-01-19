@@ -46,12 +46,16 @@ class FitSheetWrapper(object):
 class ExcelExporter(Exporter):
 
     @classmethod
-    def render(cls, report, column_labels, report_rows, report_inlines):
+    def render(cls, report, title, column_labels, report_rows, report_inlines):
         book = Workbook(encoding='utf-8')
-        sheet1 = FitSheetWrapper(book.add_sheet(report.get_title()[:20]))
+        sheet1 = FitSheetWrapper(book.add_sheet(title[:20]))
         stylebold = easyxf('font: bold true; alignment:')
         stylevalue = easyxf('alignment: horizontal left, vertical top;')
         row_index = 0
+        # render report title
+        sheet1.write(row_index, 0, title, stylebold)
+        row_index += 1
+        # render columns title
         for index, x in enumerate(column_labels):
             sheet1.write(row_index, index, u'%s' % x, stylebold)
         row_index += 1

@@ -13,7 +13,7 @@ from .base import Exporter
 class PdfExporter(Exporter):
 
     @classmethod
-    def render(cls, report, column_labels, report_rows, report_inlines):
+    def render(cls, report, title, column_labels, report_rows, report_inlines):
         # where is_export is being used?
         setattr(report, 'is_export', True)
         context_dict = {
